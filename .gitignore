@@ -1,0 +1,8 @@
+.vs/ 
+*.ipch 
+
+# BLACKOUT: build output and vcpkg
+vcpkg_installed/
+**/x64/
+**/.vs/
+p3_results.csv
