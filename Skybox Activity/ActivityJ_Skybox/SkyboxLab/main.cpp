@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-//  BLACK OUT - industrial cyberpunk stealth, built on the Activity J (skybox) project.        owner: R1
+//  OBSOLETE - industrial cyberpunk stealth, built on the Activity J (skybox) project.        owner: R1
 //
 //  The frame, in order (S1 of the report):
 //    1. DirectionalShadowMapPass     directional_shadow_map.*   -> 2048^2 depth texture (cached: nothing moves)
@@ -96,9 +96,24 @@ static std::vector<Material*> matMaterial;
 static std::vector<Mesh*>     objMesh;
 static std::vector<glm::mat4> objModel;
 static std::vector<Mesh*>     conveyorMesh;
-static Mesh *sphereMesh = nullptr, *unitCylMesh = nullptr, *coneMesh = nullptr, *bodyMesh = nullptr, *headMesh = nullptr, *padMesh = nullptr, *beaconMesh = nullptr;
+static Mesh* sphereMesh = nullptr, * unitCylMesh = nullptr, * coneMesh = nullptr, * bodyMesh = nullptr, * headMesh = nullptr, * padMesh = nullptr, * beaconMesh = nullptr;
 static Texture* whiteTex = nullptr;
 static Texture* padTex = nullptr;
+static Texture* scannerTex = nullptr;      // floor marker: rim, rings, crosshair ticks, radar sweep
+static Texture* beamTex = nullptr;         // beam: bright at the emitter, fading toward the floor, with streaks
+static Mesh* decalMesh = nullptr;       // 2 x 2 flat quad, UVs 0..1, scaled to the exposure ellipse
+static int      drawDecalLight = -1;       // >= 0 while a scanner marker is drawn (see shader.frag)
+
+// the exit pathway (level file: game_logic.exit_zone.pathway): floor strip with scrolling chevrons, two glowing
+// rails, a glowing doorway set into the wall, and a soft additive glow in the doorway
+struct ExitGfx
+{
+	bool  enabled = false;
+	Mesh* floorMesh = nullptr, * railMesh = nullptr, * doorMesh = nullptr, * postMesh = nullptr, * topMesh = nullptr, * glowMesh = nullptr;
+	glm::mat4 floorModel{ 1.0f }, railModel[2], doorModel{ 1.0f }, postModel[2], topModel{ 1.0f }, glowModel{ 1.0f };
+	float length = 1.0f;
+};
+static ExitGfx exitGfx;
 
 static float  drawAlpha = 1.0f;          // alphaMul for the next DrawMesh
 static glm::vec2 drawUV(0.0f);           // uvOffset for the next DrawMesh (conveyor scroll)
@@ -176,14 +191,53 @@ static void CreateObjects()
 	whiteTex->LoadTextureA();
 	padTex = new Texture("Textures/exitpad.png");
 	padTex->LoadTextureA();
+	scannerTex = new Texture("Textures/scanner.png");
+	scannerTex->LoadTextureA();
+	beamTex = new Texture("Textures/beam.png");
+	beamTex->LoadTextureA();
+	decalMesh = MakeBoxMesh(2.0f, 0.02f, 2.0f, 2.0f);       // one tile = the whole quad, so the texture is not repeated
 
-	sphereMesh   = MakeSphereMesh(0.25f, 24, 12);
-	unitCylMesh  = MakeCylinderMesh(1.0f, 1.0f, 40);
-	coneMesh     = MakeConeMesh(1.0f, 1.0f, 40);
-	bodyMesh     = MakeCylinderMesh(0.30f, 0.60f, 32);
-	headMesh     = MakeSphereMesh(0.22f, 24, 12);
-	padMesh      = MakeCylinderMesh(scene.exitRadius, 0.06f, 48);
-	beaconMesh   = MakeCylinderMesh(0.12f, 6.0f, 20);
+	// ---- the glowing exit pathway, built from the numbers in the level file ----
+	if (scene.exitPath.enabled)
+	{
+		const ExitPath& ep = scene.exitPath;
+		glm::vec2 d2 = ep.to - ep.from;
+		float len = glm::length(d2);
+		d2 = d2 / len;
+		float yaw = std::atan2(-d2.y, d2.x);                         // rotation about Y that turns local +x into the path direction
+		glm::vec2 mid2 = (ep.from + ep.to) * 0.5f;
+		glm::mat4 base = glm::rotate(glm::translate(glm::mat4(1.0f), glm::vec3(mid2.x, 0.0f, mid2.y)), yaw, glm::vec3(0, 1, 0));
+		const float W = ep.width, H = ep.doorHeight;
+		float tile = scene.materials[ep.material].tile;
+
+		exitGfx.enabled = true;
+		exitGfx.length = len;
+		exitGfx.floorMesh = MakeBoxMesh(len, 0.05f, W, tile);
+		exitGfx.floorModel = glm::translate(base, glm::vec3(0.0f, 0.085f, 0.0f));          // just above the conveyor belts (top at 0.10)
+		exitGfx.railMesh = MakeBoxMesh(len, 0.22f, 0.10f, 1.0f);
+		for (int s = 0; s < 2; ++s)
+			exitGfx.railModel[s] = glm::translate(base, glm::vec3(0.0f, 0.17f, (s ? 1.0f : -1.0f) * (W * 0.5f - 0.05f)));
+
+		// the doorway sits at the wall end of the path: a bright panel, a frame, and a glow in front of it
+		glm::mat4 endBase = glm::rotate(glm::translate(glm::mat4(1.0f), glm::vec3(ep.to.x, 0.0f, ep.to.y)), yaw, glm::vec3(0, 1, 0));
+		exitGfx.doorMesh = MakeBoxMesh(0.10f, H, W, 1.0f);
+		exitGfx.doorModel = glm::translate(endBase, glm::vec3(-0.06f, H * 0.5f, 0.0f));
+		exitGfx.postMesh = MakeBoxMesh(0.16f, H + 0.2f, 0.20f, 1.0f);
+		for (int s = 0; s < 2; ++s)
+			exitGfx.postModel[s] = glm::translate(endBase, glm::vec3(-0.08f, (H + 0.2f) * 0.5f, (s ? 1.0f : -1.0f) * (W * 0.5f + 0.1f)));
+		exitGfx.topMesh = MakeBoxMesh(0.16f, 0.20f, W + 0.4f, 1.0f);
+		exitGfx.topModel = glm::translate(endBase, glm::vec3(-0.08f, H + 0.1f, 0.0f));
+		exitGfx.glowMesh = MakeBoxMesh(2.0f, H, W, 1.0f);
+		exitGfx.glowModel = glm::translate(endBase, glm::vec3(-1.05f, H * 0.5f, 0.0f));
+	}
+
+	sphereMesh = MakeSphereMesh(0.25f, 24, 12);
+	unitCylMesh = MakeCylinderMesh(1.0f, 1.0f, 40);
+	coneMesh = MakeConeMesh(1.0f, 1.0f, 40);
+	bodyMesh = MakeCylinderMesh(0.30f, 0.60f, 32);
+	headMesh = MakeSphereMesh(0.22f, 24, 12);
+	padMesh = MakeCylinderMesh(scene.exitRadius, 0.06f, 48);
+	beaconMesh = MakeCylinderMesh(0.12f, 6.0f, 20);
 }
 
 static void CreateShaders()
@@ -270,6 +324,7 @@ static void DrawMesh(Mesh* mesh, const glm::mat4& model, Texture* tex, float spe
 	mainShader.SetFloat("emissive", emissive);
 	mainShader.SetFloat("alphaMul", drawAlpha);
 	mainShader.SetVec2("uvOffset", drawUV);
+	mainShader.SetInt("decalLight", drawDecalLight);
 	mesh->RenderMesh();
 }
 
@@ -307,10 +362,30 @@ static void DrawWorld(bool extras)
 	}
 	drawUV = glm::vec2(0.0f);
 
-	// exit hatch + beacon
-	glm::vec3 ep(scene.exitPos.x, 0.0f, scene.exitPos.y);
-	DrawMesh(padMesh, glm::translate(glm::mat4(1.0f), ep + glm::vec3(0, 0.10f, 0)), padTex, 0.2f, 8.0f, glm::vec3(1.0f), 0.9f);
-	DrawMesh(beaconMesh, glm::translate(glm::mat4(1.0f), ep), whiteTex, 0.0f, 1.0f, glm::vec3(0.3f, 1.0f, 0.4f), 1.5f);
+	if (exitGfx.enabled)
+	{
+		// the way out: a green pathway attached to the wall, chevrons sliding toward the doorway
+		const ExitPath& xp = scene.exitPath;
+		const MaterialDef& fm = scene.materials[xp.material];
+		const MaterialDef& gm = scene.materials[xp.glowMaterial];
+		const float pulse = 0.75f + 0.25f * std::sin((float)tnow * 3.0f);
+		drawUV = glm::vec2(-(float)std::fmod(1.2 * tnow / fm.tile, 1.0), 0.0f);
+		DrawMesh(exitGfx.floorMesh, exitGfx.floorModel, matTexture[xp.material], fm.specular, fm.shininess, fm.colour, fm.emissive * pulse);
+		drawUV = glm::vec2(0.0f);
+		for (int s = 0; s < 2; ++s)
+			DrawMesh(exitGfx.railMesh, exitGfx.railModel[s], matTexture[xp.glowMaterial], gm.specular, gm.shininess, gm.colour, gm.emissive * pulse);
+		DrawMesh(exitGfx.doorMesh, exitGfx.doorModel, matTexture[xp.glowMaterial], gm.specular, gm.shininess, gm.colour, gm.emissive * pulse * 1.2f);
+		for (int s = 0; s < 2; ++s)
+			DrawMesh(exitGfx.postMesh, exitGfx.postModel[s], matTexture[xp.glowMaterial], gm.specular, gm.shininess, gm.colour, gm.emissive * 1.5f);
+		DrawMesh(exitGfx.topMesh, exitGfx.topModel, matTexture[xp.glowMaterial], gm.specular, gm.shininess, gm.colour, gm.emissive * 1.5f);
+	}
+	else
+	{
+		// fallback when the level has no pathway: a green hatch on the floor with a beacon
+		glm::vec3 ep(scene.exitPos.x, 0.0f, scene.exitPos.y);
+		DrawMesh(padMesh, glm::translate(glm::mat4(1.0f), ep + glm::vec3(0, 0.10f, 0)), padTex, 0.2f, 8.0f, glm::vec3(1.0f), 0.9f);
+		DrawMesh(beaconMesh, glm::translate(glm::mat4(1.0f), ep), whiteTex, 0.0f, 1.0f, glm::vec3(0.3f, 1.0f, 0.4f), 1.5f);
+	}
 
 	// terminal status lamps: cyan = ready, amber = being hacked, grey = rebooting
 	for (const auto& t : scene.terminals)
@@ -339,42 +414,11 @@ static void DrawWorld(bool extras)
 	{
 		glm::vec3 pp = game.playerPos + (game.onBelt ? glm::vec3(0, 0.10f, 0) : glm::vec3(0.0f));
 		glm::vec3 fwd(game.facing.x, 0.0f, game.facing.y);
-		float yaw = std::atan2(fwd.z, fwd.x);
-		float swing = std::sin(game.walkPhase) * 0.32f * game.moveBlend;
-		float bob = std::fabs(std::sin(game.walkPhase)) * 0.028f * game.moveBlend;
-		float knee = std::max(0.0f, std::sin(game.walkPhase)) * 0.12f * game.moveBlend;
-		glm::mat4 frame = glm::translate(glm::mat4(1.0f), pp + glm::vec3(0.0f, bob, 0.0f)) * glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0, 1, 0));
-
-		DrawMesh(bodyMesh, frame * glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.03f, 0.0f)), glm::vec3(1.0f, 1.08f, 1.0f)), whiteTex,
-			0.5f, 40.0f, glm::vec3(0.52f, 0.55f, 0.60f), 0.0f);
-		DrawMesh(headMesh, frame * glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.01f, 0.72f, 0.0f)), glm::vec3(1.08f, 0.58f, 1.08f)), whiteTex,
-			0.45f, 36.0f, glm::vec3(0.34f, 0.36f, 0.39f), 0.0f);
-		DrawMesh(sphereMesh, glm::scale(glm::translate(glm::mat4(1.0f), pp + glm::vec3(0, 0.76f + bob, 0) + fwd * 0.20f), glm::vec3(0.26f)), whiteTex,
-			0.0f, 1.0f, glm::vec3(0.2f, 0.88f, 1.0f), 2.3f);
-
-		glm::mat4 shoulderL = frame * glm::translate(glm::mat4(1.0f), glm::vec3(0.01f, 0.61f, 0.30f));
-		glm::mat4 shoulderR = frame * glm::translate(glm::mat4(1.0f), glm::vec3(0.01f, 0.61f, -0.30f));
-		DrawMesh(sphereMesh, shoulderL * glm::scale(glm::mat4(1.0f), glm::vec3(0.09f)), whiteTex, 0.4f, 20.0f, glm::vec3(0.40f, 0.43f, 0.47f), 0.0f);
-		DrawMesh(sphereMesh, shoulderR * glm::scale(glm::mat4(1.0f), glm::vec3(0.09f)), whiteTex, 0.4f, 20.0f, glm::vec3(0.40f, 0.43f, 0.47f), 0.0f);
-		glm::mat4 armL = shoulderL * glm::rotate(glm::mat4(1.0f), swing + 0.08f, glm::vec3(0, 0, 1));
-		glm::mat4 armR = shoulderR * glm::rotate(glm::mat4(1.0f), -swing - 0.08f, glm::vec3(0, 0, 1));
-		DrawMesh(unitCylMesh, armL * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.14f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.068f, 0.16f, 0.068f)), whiteTex, 0.38f, 24.0f, glm::vec3(0.41f, 0.44f, 0.49f), 0.0f);
-		DrawMesh(unitCylMesh, armR * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.14f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.068f, 0.16f, 0.068f)), whiteTex, 0.38f, 24.0f, glm::vec3(0.41f, 0.44f, 0.49f), 0.0f);
-		DrawMesh(sphereMesh, armL * glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.27f, 0.0f)), glm::vec3(0.068f)), whiteTex, 0.35f, 18.0f, glm::vec3(0.37f, 0.40f, 0.44f), 0.0f);
-		DrawMesh(sphereMesh, armR * glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.27f, 0.0f)), glm::vec3(0.068f)), whiteTex, 0.35f, 18.0f, glm::vec3(0.37f, 0.40f, 0.44f), 0.0f);
-		DrawMesh(unitCylMesh, armL * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.40f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.058f, 0.14f, 0.058f)), whiteTex, 0.32f, 16.0f, glm::vec3(0.35f, 0.38f, 0.42f), 0.0f);
-		DrawMesh(unitCylMesh, armR * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.40f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.058f, 0.14f, 0.058f)), whiteTex, 0.32f, 16.0f, glm::vec3(0.35f, 0.38f, 0.42f), 0.0f);
-
-		glm::mat4 hipL = frame * glm::translate(glm::mat4(1.0f), glm::vec3(-0.02f, -0.23f, 0.16f));
-		glm::mat4 hipR = frame * glm::translate(glm::mat4(1.0f), glm::vec3(-0.02f, -0.23f, -0.16f));
-		glm::mat4 legL = hipL * glm::rotate(glm::mat4(1.0f), -swing * 0.85f - knee, glm::vec3(0, 0, 1));
-		glm::mat4 legR = hipR * glm::rotate(glm::mat4(1.0f), swing * 0.85f + knee * 0.5f, glm::vec3(0, 0, 1));
-		DrawMesh(unitCylMesh, legL * glm::scale(glm::mat4(1.0f), glm::vec3(0.095f, 0.36f, 0.095f)), whiteTex, 0.34f, 18.0f, glm::vec3(0.35f, 0.38f, 0.42f), 0.0f);
-		DrawMesh(unitCylMesh, legR * glm::scale(glm::mat4(1.0f), glm::vec3(0.095f, 0.36f, 0.095f)), whiteTex, 0.34f, 18.0f, glm::vec3(0.35f, 0.38f, 0.42f), 0.0f);
-		DrawMesh(bodyMesh, legL * glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.19f, 0.0f)), glm::vec3(0.22f, 0.06f, 0.16f)), whiteTex,
-			0.25f, 10.0f, glm::vec3(0.28f, 0.30f, 0.33f), 0.0f);
-		DrawMesh(bodyMesh, legR * glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.19f, 0.0f)), glm::vec3(0.22f, 0.06f, 0.16f)), whiteTex,
-			0.25f, 10.0f, glm::vec3(0.28f, 0.30f, 0.33f), 0.0f);
+		DrawMesh(bodyMesh, glm::translate(glm::mat4(1.0f), pp + glm::vec3(0, 0.03f, 0)), whiteTex, 0.6f, 32.0f, glm::vec3(0.55f, 0.58f, 0.62f), 0.0f);
+		DrawMesh(headMesh, glm::scale(glm::translate(glm::mat4(1.0f), pp + glm::vec3(0, 0.70f, 0)), glm::vec3(1.0f, 0.65f, 1.0f)), whiteTex,
+			0.5f, 24.0f, glm::vec3(0.35f, 0.37f, 0.40f), 0.0f);
+		DrawMesh(sphereMesh, glm::scale(glm::translate(glm::mat4(1.0f), pp + glm::vec3(0, 0.72f, 0) + fwd * 0.19f), glm::vec3(0.32f)), whiteTex,
+			0.0f, 1.0f, glm::vec3(0.2f, 0.9f, 1.0f), 2.5f);
 	}
 
 	// ---- additive effects: scanner beams, terminal links, lock-on rings, strike columns ----
@@ -382,11 +426,19 @@ static void DrawWorld(bool extras)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	glDepthMask(GL_FALSE);
 
-	for (const auto& b : scene.bulbs)
+	if (exitGfx.enabled)                                       // soft green light spilling out of the doorway
 	{
+		const MaterialDef& gm = scene.materials[scene.exitPath.glowMaterial];
+		drawAlpha = 0.10f + 0.05f * std::sin((float)tnow * 3.0f);
+		DrawMesh(exitGfx.glowMesh, exitGfx.glowModel, matTexture[scene.exitPath.glowMaterial], 0.0f, 1.0f, gm.colour, 1.5f);
+	}
+
+	for (size_t bi = 0; bi < scene.bulbs.size(); ++bi)
+	{
+		const Bulb& b = scene.bulbs[bi];
 		const float pulse = 0.5f + 0.5f * std::sin((float)tnow * 18.0f);
 
-		if (b.scanner && b.power > 0.0f)                       // the volumetric cone
+		if (b.scanner && b.power > 0.0f)                       // the volumetric beam: streaked, brightest at the emitter
 		{
 			glm::vec3 P = b.position, A(b.aim.x, 0.0f, b.aim.y), d = A - P;
 			float L = glm::length(d);
@@ -394,8 +446,24 @@ static void DrawWorld(bool extras)
 			{
 				float r = L * std::tan(glm::radians(b.edgeDeg));
 				glm::mat4 bm = glm::scale(glm::translate(glm::mat4(1.0f), P) * AlignDown(d / L), glm::vec3(r, L, r));
-				drawAlpha = (b.state == ScanState::Locked ? 0.16f + 0.10f * pulse : 0.07f) + 0.08f * b.detect;
-				DrawMesh(coneMesh, bm, whiteTex, 0.0f, 1.0f, b.colour, 1.0f);
+				drawAlpha = (b.state == ScanState::Locked ? 0.30f + 0.15f * pulse : 0.15f) + 0.12f * b.detect;
+				DrawMesh(coneMesh, bm, beamTex, 0.0f, 1.0f, b.colour, 1.0f);
+			}
+
+			// the floor marker: a radar disc sized to the area the game really treats as "scanned" (ExposureEllipse),
+			// spinning (faster once locked on), tinted by the scanner colour and hidden wherever a blocker shades the floor
+			glm::vec2 ec; float eyaw, ea, eb;
+			if (ExposureEllipse(scene, b, ec, eyaw, ea, eb))
+			{
+				float spin = (float)tnow * (b.state == ScanState::Locked ? 3.5f : 0.9f);
+				glm::mat4 dm = glm::translate(glm::mat4(1.0f), glm::vec3(ec.x, 0.14f, ec.y));
+				dm = glm::rotate(dm, eyaw, glm::vec3(0, 1, 0));
+				dm = glm::scale(dm, glm::vec3(ea, 1.0f, eb));
+				dm = glm::rotate(dm, spin, glm::vec3(0, 1, 0));
+				drawAlpha = 0.95f;
+				drawDecalLight = (int)bi;
+				DrawMesh(decalMesh, dm, scannerTex, 0.0f, 1.0f, b.colour, 1.6f);
+				drawDecalLight = -1;
 			}
 		}
 		if (b.state == ScanState::Locked)                      // where the strike will land
@@ -739,121 +807,121 @@ static void RunP3Study()
 
 static void DrawHud(const Scene& sc, const Game& g, float frameMs, bool vsync)
 {
-    const int W = g_fbW, H = g_fbH;
-    const int ts = std::max(2, H / 240);          // text scale (pixels per glyph pixel)
-    const int big = ts * 3;
-    Hud& hud = R.hud;
-    hud.Begin(W, H);
+	const int W = g_fbW, H = g_fbH;
+	const int ts = std::max(2, H / 240);          // text scale (pixels per glyph pixel)
+	const int big = ts * 3;
+	Hud& hud = R.hud;
+	hud.Begin(W, H);
 
-    const glm::vec4 white(1, 1, 1, 1), grey(0.75f, 0.75f, 0.8f, 1), dim(0, 0, 0, 0.55f);
-    auto centre = [&](const std::string& s, float y, int scale, const glm::vec4& c) {
-        while (scale > 1 && hud.TextWidth(s, scale) > W * 0.96f) --scale;     // shrink to fit narrow windows
-        hud.Text(s, (W - hud.TextWidth(s, scale)) * 0.5f, y, scale, c);
-    };
+	const glm::vec4 white(1, 1, 1, 1), grey(0.75f, 0.75f, 0.8f, 1), dim(0, 0, 0, 0.55f);
+	auto centre = [&](const std::string& s, float y, int scale, const glm::vec4& c) {
+		while (scale > 1 && hud.TextWidth(s, scale) > W * 0.96f) --scale;     // shrink to fit narrow windows
+		hud.Text(s, (W - hud.TextWidth(s, scale)) * 0.5f, y, scale, c);
+		};
 
-    // red vignette that grows with the alarm
-    if (g.state == GameState::Playing && g.alarm > 0.3f)
-        hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0.8f, 0.0f, 0.0f, 0.30f * (g.alarm - 0.3f) / 0.7f));
+	// red vignette that grows with the alarm
+	if (g.state == GameState::Playing && g.alarm > 0.3f)
+		hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0.8f, 0.0f, 0.0f, 0.30f * (g.alarm - 0.3f) / 0.7f));
 
-    // ---- ALARM METER (top centre) ----
-    float barW = W * 0.40f, barH = 10.0f * ts, bx = (W - barW) * 0.5f, by = H - barH - 6.0f * ts - 8.0f * ts;
-    hud.Text("SCANNER DETECTION", bx, by + barH + 2.0f * ts, ts, grey);
-    hud.Rect(bx - 3, by - 3, barW + 6, barH + 6, glm::vec4(0, 0, 0, 0.7f));
-    glm::vec3 col = (g.alarm < 0.5f) ? glm::mix(glm::vec3(0.1f, 0.8f, 0.2f), glm::vec3(1.0f, 0.85f, 0.1f), g.alarm * 2.0f)
-                                     : glm::mix(glm::vec3(1.0f, 0.85f, 0.1f), glm::vec3(1.0f, 0.1f, 0.05f), (g.alarm - 0.5f) * 2.0f);
-    hud.Rect(bx, by, barW * g.alarm, barH, glm::vec4(col, 1.0f));
-    std::string pct = Fmt("%.0f", g.alarm * 100.0) + "%";
-    hud.Text(pct, bx + barW - hud.TextWidth(pct, ts), by + barH + 2.0f * ts, ts, white);
+	// ---- ALARM METER (top centre) ----
+	float barW = W * 0.40f, barH = 10.0f * ts, bx = (W - barW) * 0.5f, by = H - barH - 6.0f * ts - 8.0f * ts;
+	hud.Text("SCANNER DETECTION", bx, by + barH + 2.0f * ts, ts, grey);
+	hud.Rect(bx - 3, by - 3, barW + 6, barH + 6, glm::vec4(0, 0, 0, 0.7f));
+	glm::vec3 col = (g.alarm < 0.5f) ? glm::mix(glm::vec3(0.1f, 0.8f, 0.2f), glm::vec3(1.0f, 0.85f, 0.1f), g.alarm * 2.0f)
+		: glm::mix(glm::vec3(1.0f, 0.85f, 0.1f), glm::vec3(1.0f, 0.1f, 0.05f), (g.alarm - 0.5f) * 2.0f);
+	hud.Rect(bx, by, barW * g.alarm, barH, glm::vec4(col, 1.0f));
+	std::string pct = Fmt("%.0f", g.alarm * 100.0) + "%";
+	hud.Text(pct, bx + barW - hud.TextWidth(pct, ts), by + barH + 2.0f * ts, ts, white);
 
-    // ---- LIGHT METER (bottom left): the number the alarm is actually driven by (E2) ----
-    float lx = 12.0f, ly = 12.0f;
-    hud.Rect(lx - 6, ly - 6, 88.0f * ts + 12.0f, 40.0f * ts, dim);
-    hud.Text(g.lit ? "SCANNED" : "HIDDEN", lx, ly + 20.0f * ts, ts * 2, g.lit ? glm::vec4(1.0f, 0.35f, 0.25f, 1) : glm::vec4(0.3f, 0.9f, 0.5f, 1));
-    hud.Text("LIGHT " + Fmt("%.3f", g.illum), lx, ly + 11.0f * ts, ts, white);
-    if (R.liveProbe) hud.Text("GPU   " + Fmt("%.3f", R.liveGpuIllum), lx, ly + 2.0f * ts, ts, glm::vec4(0.5f, 0.9f, 1.0f, 1));
-    else             hud.Text("THRESHOLD " + Fmt("%.2f", sc.litThreshold), lx, ly + 2.0f * ts, ts, grey);
+	// ---- LIGHT METER (bottom left): the number the alarm is actually driven by (E2) ----
+	float lx = 12.0f, ly = 12.0f;
+	hud.Rect(lx - 6, ly - 6, 88.0f * ts + 12.0f, 40.0f * ts, dim);
+	hud.Text(g.lit ? "SCANNED" : "HIDDEN", lx, ly + 20.0f * ts, ts * 2, g.lit ? glm::vec4(1.0f, 0.35f, 0.25f, 1) : glm::vec4(0.3f, 0.9f, 0.5f, 1));
+	hud.Text("LIGHT " + Fmt("%.3f", g.illum), lx, ly + 11.0f * ts, ts, white);
+	if (R.liveProbe) hud.Text("GPU   " + Fmt("%.3f", R.liveGpuIllum), lx, ly + 2.0f * ts, ts, glm::vec4(0.5f, 0.9f, 1.0f, 1));
+	else             hud.Text("THRESHOLD " + Fmt("%.2f", sc.litThreshold), lx, ly + 2.0f * ts, ts, grey);
 
-    // ---- performance (top right) ----
-    float rx = W - 12.0f;
-    auto right = [&](const std::string& s, float y, const glm::vec4& c) { hud.Text(s, rx - hud.TextWidth(s, ts), y, ts, c); };
-    right(Fmt("%.1f", frameMs) + " MS " + (vsync ? "VSYNC" : "NO VSYNC"), H - 10.0f * ts, grey);
-    right("SHADOW GPU " + Fmt("%.2f", R.shadowGpuMs) + " MS", H - 19.0f * ts, grey);
-    right(std::string("CACHE ") + (R.cacheEnabled ? "ON " : "OFF ") + std::to_string(R.mapsRebuilt) + "/" +
-          std::to_string(1 + 1 + scene.bulbs.size()) + " MAPS", H - 28.0f * ts, grey);
+	// ---- performance (top right) ----
+	float rx = W - 12.0f;
+	auto right = [&](const std::string& s, float y, const glm::vec4& c) { hud.Text(s, rx - hud.TextWidth(s, ts), y, ts, c); };
+	right(Fmt("%.1f", frameMs) + " MS " + (vsync ? "VSYNC" : "NO VSYNC"), H - 10.0f * ts, grey);
+	right("SHADOW GPU " + Fmt("%.2f", R.shadowGpuMs) + " MS", H - 19.0f * ts, grey);
+	right(std::string("CACHE ") + (R.cacheEnabled ? "ON " : "OFF ") + std::to_string(R.mapsRebuilt) + "/" +
+		std::to_string(1 + 1 + scene.bulbs.size()) + " MAPS", H - 28.0f * ts, grey);
 
-    // ---- level / time (bottom right) ----
-    {
-        std::string s = "LEVEL " + std::to_string(g.level);
-        hud.Text(s, W - 12.0f - hud.TextWidth(s, ts), 12.0f + 9.0f * ts, ts, white);
-        std::string t = "TIME " + Fmt("%.1f", g.elapsed);
-        hud.Text(t, W - 12.0f - hud.TextWidth(t, ts), 12.0f, ts, white);
-    }
+	// ---- level / time (bottom right) ----
+	{
+		std::string s = "LEVEL " + std::to_string(g.level);
+		hud.Text(s, W - 12.0f - hud.TextWidth(s, ts), 12.0f + 9.0f * ts, ts, white);
+		std::string t = "TIME " + Fmt("%.1f", g.elapsed);
+		hud.Text(t, W - 12.0f - hud.TextWidth(t, ts), 12.0f, ts, white);
+	}
 
-    // ---- lock-on warning, hacking prompts, status line (only while playing) ----
-    if (g.state == GameState::Playing)
-    {
-        if (g.lockedCount > 0)
-        {
-            bool blink = std::fmod(glfwGetTime() * 6.0, 2.0) < 1.0;
-            centre("LOCK ON  STRIKE IN " + Fmt("%.1f", std::max(g.nextStrike, 0.0f)) + "  RUN", H * 0.74f, ts * 3,
-                   blink ? glm::vec4(1.0f, 0.15f, 0.1f, 1) : glm::vec4(1.0f, 0.6f, 0.2f, 1));
-        }
-        if (g.nearTerminal >= 0)
-        {
-            const Terminal& t = sc.terminals[g.nearTerminal];
-            if (t.cooldown > 0.0f)
-                centre("TERMINAL REBOOTING " + Fmt("%.1f", t.cooldown), H * 0.30f, ts * 2, grey);
-            else
-            {
-                centre("HOLD E TO HACK", H * 0.30f, ts * 2, glm::vec4(0.3f, 1.0f, 0.9f, 1));
-                float hw = W * 0.22f, hh = 5.0f * ts, hx = (W - hw) * 0.5f, hy = H * 0.30f - 8.0f * ts;
-                hud.Rect(hx - 2, hy - 2, hw + 4, hh + 4, glm::vec4(0, 0, 0, 0.7f));
-                hud.Rect(hx, hy, hw * g.hackProgress, hh, glm::vec4(0.1f, 0.9f, 0.8f, 1));
-            }
-        }
-        if (g.messageTime > 0.0f) centre(g.message, H * 0.64f, ts * 2, glm::vec4(0.3f, 1.0f, 0.9f, 1));
-        if (g.onBelt) hud.Text("CONVEYOR", 12.0f, 12.0f + 44.0f * ts, ts, glm::vec4(1.0f, 0.85f, 0.2f, 1));
-    }
+	// ---- lock-on warning, hacking prompts, status line (only while playing) ----
+	if (g.state == GameState::Playing)
+	{
+		if (g.lockedCount > 0)
+		{
+			bool blink = std::fmod(glfwGetTime() * 6.0, 2.0) < 1.0;
+			centre("LOCK ON  STRIKE IN " + Fmt("%.1f", std::max(g.nextStrike, 0.0f)) + "  RUN", H * 0.74f, ts * 3,
+				blink ? glm::vec4(1.0f, 0.15f, 0.1f, 1) : glm::vec4(1.0f, 0.6f, 0.2f, 1));
+		}
+		if (g.nearTerminal >= 0)
+		{
+			const Terminal& t = sc.terminals[g.nearTerminal];
+			if (t.cooldown > 0.0f)
+				centre("TERMINAL REBOOTING " + Fmt("%.1f", t.cooldown), H * 0.30f, ts * 2, grey);
+			else
+			{
+				centre("HOLD E TO HACK", H * 0.30f, ts * 2, glm::vec4(0.3f, 1.0f, 0.9f, 1));
+				float hw = W * 0.22f, hh = 5.0f * ts, hx = (W - hw) * 0.5f, hy = H * 0.30f - 8.0f * ts;
+				hud.Rect(hx - 2, hy - 2, hw + 4, hh + 4, glm::vec4(0, 0, 0, 0.7f));
+				hud.Rect(hx, hy, hw * g.hackProgress, hh, glm::vec4(0.1f, 0.9f, 0.8f, 1));
+			}
+		}
+		if (g.messageTime > 0.0f) centre(g.message, H * 0.64f, ts * 2, glm::vec4(0.3f, 1.0f, 0.9f, 1));
+		if (g.onBelt) hud.Text("CONVEYOR", 12.0f, 12.0f + 44.0f * ts, ts, glm::vec4(1.0f, 0.85f, 0.2f, 1));
+	}
 
-    // "break it on purpose" banner
-    const char* breakNames[] = { "", "BROKEN: GPU SHADOWS OFF", "BROKEN: CPU IGNORES WALLS", "BROKEN: HUGE SHADOW BIAS" };
-    if (R.breakMode > 0) centre(breakNames[R.breakMode], H * 0.82f, ts * 2, glm::vec4(1.0f, 0.5f, 0.1f, 1));
-    if (R.debugView == 1) centre("GAME VIEW  RED = SCANNED  BLUE = HIDDEN", H * 0.78f, ts, glm::vec4(0.6f, 1, 0.6f, 1));
+	// "break it on purpose" banner
+	const char* breakNames[] = { "", "BROKEN: GPU SHADOWS OFF", "BROKEN: CPU IGNORES WALLS", "BROKEN: HUGE SHADOW BIAS" };
+	if (R.breakMode > 0) centre(breakNames[R.breakMode], H * 0.82f, ts * 2, glm::vec4(1.0f, 0.5f, 0.1f, 1));
+	if (R.debugView == 1) centre("GAME VIEW  RED = SCANNED  BLUE = HIDDEN", H * 0.78f, ts, glm::vec4(0.6f, 1, 0.6f, 1));
 
-    // ---- state screens ----
-    if (g.state == GameState::Title)
-    {
-        hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0, 0, 0, 0.62f));
-        centre("BLACK OUT", H * 0.68f, big * 2, white);
-        centre("YOU ARE SCHEDULED FOR THE INCINERATOR", H * 0.59f, ts * 2, glm::vec4(1.0f, 0.55f, 0.2f, 1));
-        centre("REACH THE GREEN HATCH", H * 0.48f, ts * 2, glm::vec4(0.4f, 1, 0.5f, 1));
-        centre("YELLOW SCANNER BEAMS FILL DETECTION  HIDE BEHIND SCRAP", H * 0.42f, ts * 2, white);
-        centre("RED MEANS LOCK ON  RUN BEFORE THE STRIKE LANDS", H * 0.36f, ts * 2, white);
-        centre("HACK TERMINALS TO REROUTE THE SCANNERS", H * 0.30f, ts * 2, glm::vec4(0.3f, 1.0f, 0.9f, 1));
-        centre("WASD MOVE   MOUSE LOOK   HOLD E HACK   F LAMP   P PAUSE   R RESTART", H * 0.23f, ts, grey);
-        centre("PRESS ENTER TO START", H * 0.13f, big, white);
-    }
-    else if (g.state == GameState::Paused)
-    {
-        hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0, 0, 0, 0.5f));
-        centre("PAUSED", H * 0.52f, big * 2, white);
-        centre("PRESS P TO CONTINUE", H * 0.42f, ts * 2, grey);
-    }
-    else if (g.state == GameState::Won)
-    {
-        hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0, 0.25f, 0, 0.55f));
-        centre("ESCAPED", H * 0.58f, big * 2, glm::vec4(0.4f, 1, 0.5f, 1));
-        centre("TIME " + Fmt("%.1f", g.finalTime) + " SECONDS", H * 0.48f, ts * 2, white);
-        centre("PRESS R FOR LEVEL " + std::to_string(g.level + 1) + "  SCANNERS SWEEP FASTER", H * 0.38f, ts * 2, white);
-    }
-    else if (g.state == GameState::Lost)
-    {
-        hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0.35f, 0, 0, 0.6f));
-        centre("INCINERATED", H * 0.58f, big * 2, glm::vec4(1, 0.3f, 0.25f, 1));
-        centre("LASTED " + Fmt("%.1f", g.finalTime) + " SECONDS", H * 0.48f, ts * 2, white);
-        centre("PRESS R TO TRY AGAIN", H * 0.38f, ts * 2, white);
-    }
-    hud.End();
+	// ---- state screens ----
+	if (g.state == GameState::Title)
+	{
+		hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0, 0, 0, 0.62f));
+		centre("OBSOLETE", H * 0.68f, big * 2, white);
+		centre("YOU ARE SCHEDULED FOR THE INCINERATOR", H * 0.59f, ts * 2, glm::vec4(1.0f, 0.55f, 0.2f, 1));
+		centre("REACH THE GREEN HATCH", H * 0.48f, ts * 2, glm::vec4(0.4f, 1, 0.5f, 1));
+		centre("YELLOW SCANNER BEAMS FILL DETECTION  HIDE BEHIND SCRAP", H * 0.42f, ts * 2, white);
+		centre("RED MEANS LOCK ON  RUN BEFORE THE STRIKE LANDS", H * 0.36f, ts * 2, white);
+		centre("HACK TERMINALS TO REROUTE THE SCANNERS", H * 0.30f, ts * 2, glm::vec4(0.3f, 1.0f, 0.9f, 1));
+		centre("WASD MOVE   MOUSE LOOK   HOLD E HACK   F LAMP   P PAUSE   R RESTART", H * 0.23f, ts, grey);
+		centre("PRESS ENTER TO START", H * 0.13f, big, white);
+	}
+	else if (g.state == GameState::Paused)
+	{
+		hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0, 0, 0, 0.5f));
+		centre("PAUSED", H * 0.52f, big * 2, white);
+		centre("PRESS P TO CONTINUE", H * 0.42f, ts * 2, grey);
+	}
+	else if (g.state == GameState::Won)
+	{
+		hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0, 0.25f, 0, 0.55f));
+		centre("ESCAPED", H * 0.58f, big * 2, glm::vec4(0.4f, 1, 0.5f, 1));
+		centre("TIME " + Fmt("%.1f", g.finalTime) + " SECONDS", H * 0.48f, ts * 2, white);
+		centre("PRESS R FOR LEVEL " + std::to_string(g.level + 1) + "  SCANNERS SWEEP FASTER", H * 0.38f, ts * 2, white);
+	}
+	else if (g.state == GameState::Lost)
+	{
+		hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0.35f, 0, 0, 0.6f));
+		centre("INCINERATED", H * 0.58f, big * 2, glm::vec4(1, 0.3f, 0.25f, 1));
+		centre("LASTED " + Fmt("%.1f", g.finalTime) + " SECONDS", H * 0.48f, ts * 2, white);
+		centre("PRESS R TO TRY AGAIN", H * 0.38f, ts * 2, white);
+	}
+	hud.End();
 }
 
 
@@ -912,7 +980,7 @@ int main(int argc, char** argv)
 	game.Init(scene);
 	ResetCamera();
 
-	std::printf("\nBLACK OUT   %s\n", glGetString(GL_VERSION) ? (const char*)glGetString(GL_VERSION) : "?");
+	std::printf("\nOBSOLETE   %s\n", glGetString(GL_VERSION) ? (const char*)glGetString(GL_VERSION) : "?");
 	std::printf("keys: WASD move | mouse look | hold E hack | F lamp | Enter start | R restart | P pause\n"
 		"      1 GPU shadows off | 2 CPU ignores walls | 3 huge bias | 0 fix | [ ] bias | V game-view overlay\n"
 		"      C shadow cache (E1) | Y vsync | T timing (300 frames) | L live GPU probe (E2) | G compare here | F9 P3 study\n\n");
@@ -941,11 +1009,11 @@ int main(int argc, char** argv)
 
 		Input in;
 		in.forward = (keys[GLFW_KEY_W] ? 1.0f : 0.0f) - (keys[GLFW_KEY_S] ? 1.0f : 0.0f);
-		in.right   = (keys[GLFW_KEY_D] ? 1.0f : 0.0f) - (keys[GLFW_KEY_A] ? 1.0f : 0.0f);
-		in.hack    = keys[GLFW_KEY_E];
-		in.enter   = mainWindow->consumeKey(GLFW_KEY_ENTER);
+		in.right = (keys[GLFW_KEY_D] ? 1.0f : 0.0f) - (keys[GLFW_KEY_A] ? 1.0f : 0.0f);
+		in.hack = keys[GLFW_KEY_E];
+		in.enter = mainWindow->consumeKey(GLFW_KEY_ENTER);
 		in.restart = mainWindow->consumeKey(GLFW_KEY_R);
-		in.pause   = mainWindow->consumeKey(GLFW_KEY_P);
+		in.pause = mainWindow->consumeKey(GLFW_KEY_P);
 
 		bool doCompare = false, doStudy = false;
 		if (mainWindow->consumeKey(GLFW_KEY_F)) { spotLights[0].Toggle(); game.flashOn = !game.flashOn; }
@@ -953,7 +1021,7 @@ int main(int argc, char** argv)
 		if (mainWindow->consumeKey(GLFW_KEY_2)) { R.breakMode = 2; std::printf("BREAK 2: CPU lit-test ignores walls - the picture shows shadow, the game says you are scanned\n"); }
 		if (mainWindow->consumeKey(GLFW_KEY_3)) { R.breakMode = 3; std::printf("BREAK 3: huge shadow bias - shadows detach from their casters\n"); }
 		if (mainWindow->consumeKey(GLFW_KEY_0)) { R.breakMode = 0; R.omniBias = scene.omniBias; std::printf("break modes cleared, bias %.3f\n", R.omniBias); }
-		if (mainWindow->consumeKey(GLFW_KEY_LEFT_BRACKET))  { R.omniBias = std::max(0.0f, R.omniBias - 0.01f); std::printf("omni bias %.3f world units\n", R.omniBias); }
+		if (mainWindow->consumeKey(GLFW_KEY_LEFT_BRACKET)) { R.omniBias = std::max(0.0f, R.omniBias - 0.01f); std::printf("omni bias %.3f world units\n", R.omniBias); }
 		if (mainWindow->consumeKey(GLFW_KEY_RIGHT_BRACKET)) { R.omniBias += 0.01f; std::printf("omni bias %.3f world units\n", R.omniBias); }
 		if (mainWindow->consumeKey(GLFW_KEY_V)) { R.debugView = 1 - R.debugView; }
 		if (mainWindow->consumeKey(GLFW_KEY_C)) { R.cacheEnabled = !R.cacheEnabled; std::printf("shadow-map cache (E1): %s\n", R.cacheEnabled ? "ON" : "OFF"); }

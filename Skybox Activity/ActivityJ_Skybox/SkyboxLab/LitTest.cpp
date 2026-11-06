@@ -70,3 +70,41 @@ LitResult ComputeIllumination(const Scene& sc, const glm::vec3& p, bool lineOfSi
     }
     return r;
 }
+
+bool ExposureEllipse(const Scene& sc, const Bulb& b, glm::vec2& centre, float& yaw, float& semiA, float& semiB)
+{
+    if (!b.scanner || b.power <= 0.0f) return false;
+
+    glm::vec2 u = b.aim - glm::vec2(b.mount.x, b.mount.z);
+    float ul = glm::length(u);
+    u = (ul > 1e-4f) ? u / ul : glm::vec2(1.0f, 0.0f);
+    const glm::vec2 v(-u.y, u.x);
+
+    // how far from the aim point, along a direction, the contribution stays >= litThreshold
+    auto reach = [&](const glm::vec2& dir) -> float
+        {
+            float last = -1.0f;
+            for (float t = 0.0f; t <= 12.0f; t += 0.05f)
+            {
+                glm::vec2 q = b.aim + dir * t;
+                glm::vec3 p(q.x, SAMPLE_HEIGHT, q.y);
+                float d = glm::length(p - b.position);
+                if (d > b.farPlane) break;
+                float c = ConeFactor(b, p) * b.diffuse * b.power / BulbAttenuation(b, d);
+                if (c >= sc.litThreshold) last = t;
+                else if (t > last + 0.3f) break;
+            }
+            return last;
+        };
+
+    float rFar = reach(u), rNear = reach(-u);
+    if (rFar < 0.0f && rNear < 0.0f) return false;            // the aim point itself is not "seen" (too far / too dim)
+    rFar = std::max(rFar, 0.0f); rNear = std::max(rNear, 0.0f);
+    float rSide = 0.5f * (std::max(reach(v), 0.0f) + std::max(reach(-v), 0.0f));
+
+    semiA = std::max(0.5f * (rFar + rNear), 0.15f);
+    semiB = std::max(rSide, 0.15f);
+    centre = b.aim + u * (0.5f * (rFar - rNear));
+    yaw = std::atan2(-u.y, u.x);                               // rotation about Y that turns local +x into u
+    return true;
+}

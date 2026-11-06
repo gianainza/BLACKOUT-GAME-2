@@ -21,11 +21,11 @@ struct MaterialDef
 {
     std::string id;
     std::string texturePath;
-    float specular  = 0.3f;
+    float specular = 0.3f;
     float shininess = 16.0f;
     glm::vec3 colour{ 1.0f };      // tint multiplied into the texture
-    float emissive  = 0.0f;
-    float tile      = 2.0f;        // world metres per texture repeat
+    float emissive = 0.0f;
+    float tile = 2.0f;        // world metres per texture repeat
 };
 
 struct SceneObject
@@ -111,6 +111,18 @@ struct Terminal
     int   line = 0;
 };
 
+// The way out: a glowing green pathway that runs along the floor up to a glowing doorway in a wall
+// (level file: game_logic.exit_zone.pathway). Purely visual - the win test is the exit zone circle.
+struct ExitPath
+{
+    bool  enabled = false;
+    glm::vec2 from{ 0.0f }, to{ 0.0f };     // floor points: where the pathway starts and where it meets the wall
+    float width = 2.4f;
+    float doorHeight = 2.6f;
+    int   material = 0;                      // scrolling chevron floor
+    int   glowMaterial = 0;                  // door panel, rails, frame (emissive green)
+};
+
 struct Scene
 {
     std::string file;
@@ -140,6 +152,7 @@ struct Scene
     // game logic
     glm::vec2 playerStart{ 0.0f }, exitPos{ 0.0f };
     float exitRadius = 1.3f;
+    ExitPath exitPath;
     glm::vec4 bounds{ -15.0f, -15.0f, 15.0f, 15.0f };   // minX, minZ, maxX, maxZ
 
     float litThreshold = 0.15f;

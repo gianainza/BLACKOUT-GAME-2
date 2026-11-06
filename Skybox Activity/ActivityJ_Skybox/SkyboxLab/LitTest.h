@@ -32,4 +32,10 @@ struct LitResult
 float BulbAttenuation(const Bulb& b, float d);
 float ConeFactor(const Bulb& b, const glm::vec3& p);
 bool  SegmentBlocked(const Scene& sc, const glm::vec3& a, const glm::vec3& b);
+// The floor region where scanner b would count the droid as "seen" (illum_i >= litThreshold, ignoring blockers),
+// as an ellipse: centre, rotation about Y (local +x = from the emitter toward the aim point) and the two
+// semi-axes. Used ONLY to size the scanner's floor marker, so the picture shows exactly the area the game
+// uses; it does not decide anything. Returns false when nothing under the aim point would be seen.
+bool ExposureEllipse(const Scene& sc, const Bulb& b, glm::vec2& centre, float& yaw, float& semiA, float& semiB);
+
 LitResult ComputeIllumination(const Scene& sc, const glm::vec3& p, bool lineOfSight = true);

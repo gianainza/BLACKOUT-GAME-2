@@ -22,12 +22,12 @@ namespace
             std::cerr << "[SCENE] " << m << "\n";
             if (std::string(kind) == "ERROR") ++errors;
         }
-        void Err (int line, const std::string& where, const std::string& msg) { Say("ERROR", line, where, msg); }
+        void Err(int line, const std::string& where, const std::string& msg) { Say("ERROR", line, where, msg); }
         void Warn(int line, const std::string& where, const std::string& msg) { Say("warning", line, where, msg); }
 
         // ---- typed getters. All return false (and report) on a wrong type / out of range value.
         bool Num(const JsonValue& o, const char* key, float& out, bool required, const std::string& where,
-                 float lo = -1e30f, float hi = 1e30f)
+            float lo = -1e30f, float hi = 1e30f)
         {
             const JsonValue* v = o.Find(key);
             if (!v) { if (required) Err(o.line, where, std::string("missing required number '") + key + "'"); return !required; }
@@ -47,7 +47,9 @@ namespace
             const JsonValue* v = o.Find(key);
             if (!v) { if (required) Err(o.line, where, std::string("missing required array '") + key + "'"); return !required; }
             if (!v->IsArray() || (int)v->arr.size() != n)
-            { Err(v->line, where, std::string("'") + key + "' must be an array of exactly " + std::to_string(n) + " numbers"); return false; }
+            {
+                Err(v->line, where, std::string("'") + key + "' must be an array of exactly " + std::to_string(n) + " numbers"); return false;
+            }
             for (int i = 0; i < n; ++i)
             {
                 if (!v->arr[i].IsNumber()) { Err(v->arr[i].line, where, std::string("'") + key + "[" + std::to_string(i) + "]' is not a number"); return false; }
@@ -82,7 +84,9 @@ namespace
             for (const auto& p : v->arr)
             {
                 if (!p.IsArray() || p.arr.size() != 2 || !p.arr[0].IsNumber() || !p.arr[1].IsNumber())
-                { Err(p.line, where, std::string("'") + key + "' entries must be [x, z] pairs of numbers"); return false; }
+                {
+                    Err(p.line, where, std::string("'") + key + "' entries must be [x, z] pairs of numbers"); return false;
+                }
                 out.push_back(glm::vec2((float)p.arr[0].num, (float)p.arr[1].num));
             }
             return true;
@@ -174,7 +178,9 @@ namespace
                     else for (const auto& p : pp->arr)
                     {
                         if (!p.IsArray() || p.arr.size() != 3 || !p.arr[0].IsNumber() || !p.arr[1].IsNumber() || !p.arr[2].IsNumber())
-                        { c.Err(p.line, w, "'patrol_path' points must be [x, y, z] numbers"); ok = false; break; }
+                        {
+                            c.Err(p.line, w, "'patrol_path' points must be [x, y, z] numbers"); ok = false; break;
+                        }
                         b.path.push_back(glm::vec3((float)p.arr[0].num, (float)p.arr[1].num, (float)p.arr[2].num));
                     }
                 }
@@ -263,7 +269,9 @@ namespace
             ok &= c.Bool(o, "solid", ob.solid, w) & c.Bool(o, "cast_shadow", ob.castShadow, w);
             if (!ok) continue;
             if (ob.mesh != "primitive:box" && ob.mesh != "primitive:cylinder" && ob.mesh != "primitive:sphere")
-            { c.Err(o.line, w, "mesh_path '" + ob.mesh + "' is not available (model loading is switched off, USE_MODELS 0). Use primitive:box, primitive:cylinder or primitive:sphere"); continue; }
+            {
+                c.Err(o.line, w, "mesh_path '" + ob.mesh + "' is not available (model loading is switched off, USE_MODELS 0). Use primitive:box, primitive:cylinder or primitive:sphere"); continue;
+            }
             if (s[0] <= 0 || s[1] <= 0 || s[2] <= 0) { c.Err(o.line, w, "'scale' values must all be > 0"); continue; }
             ob.material = sc.FindMaterial(mat);
             if (ob.material < 0) { c.Warn(o.line, w, "material_id '" + mat + "' does not exist - using material 0 instead"); ob.material = 0; }
@@ -411,6 +419,30 @@ bool SceneLoader::Load(const std::string& filepath, Scene& sc)
         {
             if (c.Vec(*e, "position", ez, 3, true, "game_logic.exit_zone")) sc.exitPos = glm::vec2(ez[0], ez[2]);
             c.Num(*e, "radius", sc.exitRadius, true, "game_logic.exit_zone", 0.3f, 20.0f);
+
+            // optional glowing pathway to a doorway in the wall
+            if (const JsonValue* pw = c.Section(*e, "pathway", JsonValue::Object, "an object"))
+            {
+                const std::string w = "game_logic.exit_zone.pathway";
+                ExitPath& ep = sc.exitPath;
+                float from[2], to[2];
+                std::string mat = "mat_exit", glow = "mat_exit_glow";
+                bool ok = c.Vec(*pw, "from", from, 2, true, w) & c.Vec(*pw, "to", to, 2, true, w);
+                ok &= c.Num(*pw, "width", ep.width, false, w, 0.8f, 10.0f) & c.Num(*pw, "door_height", ep.doorHeight, false, w, 1.0f, 3.0f);
+                ok &= c.Str(*pw, "material_id", mat, false, w) & c.Str(*pw, "glow_material_id", glow, false, w);
+                if (ok && glm::length(glm::vec2(to[0] - from[0], to[1] - from[1])) < 0.5f) { c.Err(pw->line, w, "'from' and 'to' must be at least 0.5 m apart"); ok = false; }
+                if (ok)
+                {
+                    ep.from = glm::vec2(from[0], from[1]); ep.to = glm::vec2(to[0], to[1]);
+                    ep.material = sc.FindMaterial(mat);
+                    if (ep.material < 0) { c.Warn(pw->line, w, "material_id '" + mat + "' does not exist - using material 0"); ep.material = 0; }
+                    ep.glowMaterial = sc.FindMaterial(glow);
+                    if (ep.glowMaterial < 0) { c.Warn(pw->line, w, "glow_material_id '" + glow + "' does not exist - using material 0"); ep.glowMaterial = 0; }
+                    ep.enabled = true;
+                    if (glm::length(sc.exitPos - ep.to) > sc.exitRadius + 2.0f)
+                        c.Warn(pw->line, w, "the pathway ends more than " + std::to_string(sc.exitRadius + 2.0f) + " m from the exit zone: the green path would not lead to the exit");
+                }
+            }
         }
         else c.Err(g->line, "game_logic", "missing 'exit_zone'");
         if (c.Vec(*g, "bounds", bd, 4, false, "game_logic")) sc.bounds = glm::vec4(bd[0], bd[1], bd[2], bd[3]);
@@ -450,7 +482,7 @@ bool SceneLoader::Load(const std::string& filepath, Scene& sc)
 
     sc.playable = playable && c.errors >= 0;
     std::cout << "[SCENE] " << filepath << ": " << sc.bulbs.size() << " lights (" << sc.droneCount << " drones, " << (sc.bulbs.size() - sc.droneCount)
-              << " scanners), " << sc.objects.size() << " objects, " << sc.conveyors.size() << " conveyors, " << sc.terminals.size()
-              << " terminals, " << c.errors << " error(s)\n";
+        << " scanners), " << sc.objects.size() << " objects, " << sc.conveyors.size() << " conveyors, " << sc.terminals.size()
+        << " terminals, " << c.errors << " error(s)\n";
     return sc.playable;
 }

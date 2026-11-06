@@ -74,6 +74,7 @@ uniform float emissive;          // self-lit amount (terminal lamps, scanner bea
 uniform float alphaMul;          // < 1 for the additive beams and strike columns
 uniform int   debugMode;         // 0 normal | 1 "what the game believes" overlay | 2 probe output (illum, mask)
 uniform float litThreshold;
+uniform int   decalLight;        // -1 = normal draw. >= 0: a scanner floor marker, shown only where that light can see (not in shadow)
 
 // Gameplay accounting. The game asks "is the droid lit?"; the CPU answers in LitTest.cpp and this shader
 // answers the same question per pixel, so the two can be compared (probe, key G / F9).
@@ -82,6 +83,7 @@ uniform float litThreshold;
 // g numbers the gameplay lights: drones first, then scanners (spot 0, the droid's own lamp, is skipped).
 float gIllum = 0.0;
 float gMask  = 0.0;
+float gVis[MAX_POINT_LIGHTS + MAX_SPOT_LIGHTS];      // (1 - shadow) per gameplay light, used by the scanner floor marker
 
 vec3 sampleOffsetDirections[20] = vec3[]
 (
@@ -199,6 +201,7 @@ vec4 CalcPointLightCore(PointLight pLight, int shadowIndex, float cone, int game
 
 	if (gameIndex >= 0 && cone > 0.0 && pLight.base.diffuseIntensity > 0.0)
 	{
+		gVis[gameIndex] = 1.0 - shadowFactor;
 		gIllum += (1.0 - shadowFactor) * cone * pLight.base.diffuseIntensity / attenuation;
 		if (shadowFactor < 0.5) gMask += float(1 << gameIndex);
 	}
@@ -251,6 +254,8 @@ vec4 CalcSpotLights()
 
 void main()
 {
+	for (int k = 0; k < MAX_POINT_LIGHTS + MAX_SPOT_LIGHTS; ++k) gVis[k] = 0.0;
+
 	vec4 finalColour = CalcDirectionalLight();
 	finalColour += CalcPointLights();
 	finalColour += CalcSpotLights();
@@ -258,6 +263,12 @@ void main()
 	vec4 tex = texture(theTexture, TexCoord);
 	vec3 base = tex.rgb * materialColour;
 	colour = vec4(base * finalColour.rgb + base * emissive, tex.a * alphaMul);
+
+	if (decalLight >= 0 && debugMode == 0)
+	{
+		// scanner floor marker: pure glow, faded out where a blocker hides the floor from that scanner
+		colour = vec4(base * emissive * gVis[decalLight], tex.a * alphaMul);
+	}
 
 	if (debugMode == 1)
 	{
