@@ -97,36 +97,36 @@
       "attenuation": [ 1.0, 0.09, 0.032 ]
     },
     "point_lights": [
-      {
-        "id": "drone_a",
-        "color": [ 0.9, 0.95, 1.0 ],
-        "ambient_intensity": 0.0,
-        "diffuse_intensity": 0.9,
-        "attenuation": [ 1.0, 0.12, 0.08 ],
-        "far_plane": 40,
-        "patrol_speed": 2.2,
-        "patrol_path": [
-          [ -12, 3.5, -1.5 ],
-          [ -1, 3.5, -1.5 ],
-          [ -1, 3.5, -8.5 ],
-          [ -12, 3.5, -8.5 ]
-        ]
-      },
-      {
-        "id": "drone_b",
-        "color": [ 0.9, 0.95, 1.0 ],
-        "ambient_intensity": 0.0,
-        "diffuse_intensity": 0.9,
-        "attenuation": [ 1.0, 0.12, 0.08 ],
-        "far_plane": 40,
-        "patrol_speed": 2.0,
-        "patrol_path": [
-          [ 6, 3.5, 3 ],
-          [ 13, 3.5, 3 ],
-          [ 13, 3.5, -9 ],
-          [ 6, 3.5, -9 ]
-        ]
-      }
+      //{
+       // "id": "drone_a",
+       // "color": [ 0.9, 0.95, 1.0 ],
+       // "ambient_intensity": 0.0,
+       // "diffuse_intensity": 0.9,
+       // "attenuation": [ 1.0, 0.12, 0.08 ],
+       // "far_plane": 40,
+       // "patrol_speed": 2.2,
+       // "patrol_path": [
+        //  [ -12, 3.5, -1.5 ],
+         // [ -1, 3.5, -1.5 ],
+        //  [ -1, 3.5, -8.5 ],
+         // [ -12, 3.5, -8.5 ]
+        //]
+      //},
+      //{
+       // "id": "drone_b",
+        //"color": [ 0.9, 0.95, 1.0 ],
+        //"ambient_intensity": 0.0,
+        //"diffuse_intensity": 0.9,
+        //"attenuation": [ 1.0, 0.12, 0.08 ],
+        //"far_plane": 40,
+        //"patrol_speed": 2.0,
+        //"patrol_path": [
+         // [ 6, 3.5, 3 ],
+         // [ 13, 3.5, 3 ],
+          //[ 13, 3.5, -9 ],
+          //[ 6, 3.5, -9 ]
+       // ]
+      //}
     ],
     "spot_lights": [
       {

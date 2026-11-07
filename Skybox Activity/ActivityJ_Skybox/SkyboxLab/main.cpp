@@ -400,7 +400,7 @@ static void DrawWorld(bool extras)
 	{
 		if (!b.scanner)
 		{
-			DrawMesh(sphereMesh, glm::translate(glm::mat4(1.0f), b.position), whiteTex, 0.0f, 1.0f, b.colour * ((b.power > 0.0f) ? 1.0f : 0.15f), 2.0f);
+			//DrawMesh(sphereMesh, glm::translate(glm::mat4(1.0f), b.position), whiteTex, 0.0f, 1.0f, b.colour * ((b.power > 0.0f) ? 1.0f : 0.15f), 2.0f);
 			continue;
 		}
 		float on = (b.power > 0.0f) ? 1.0f : 0.15f;
