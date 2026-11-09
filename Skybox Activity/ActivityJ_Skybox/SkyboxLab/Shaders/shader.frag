@@ -263,6 +263,21 @@ void main()
 	vec4 tex = texture(theTexture, TexCoord);
 	vec3 base = tex.rgb * materialColour;
 	colour = vec4(base * finalColour.rgb + base * emissive, tex.a * alphaMul);
+	
+	// R2 FIX: Soften the volumetric beams and fade them out at a distance
+	if (alphaMul < 1.0 && decalLight == -1) {
+		vec3 viewDir = normalize(eyePosition - FragPos);
+		
+		// 1. Fade the edges based on the view angle
+		float edgeFade = smoothstep(0.0, 1.0, abs(dot(normalize(Normal), viewDir)));
+		
+		// 2. made the whole beam fade out if it gets too far from the camera
+		float distToCamera = length(eyePosition - FragPos);
+		float distanceFade = clamp(1.0 - (distToCamera / 18.0), 0.0, 1.0);
+		
+		
+		colour.rgb *= edgeFade * distanceFade * 1.2;
+	}
 
 	if (decalLight >= 0 && debugMode == 0)
 	{

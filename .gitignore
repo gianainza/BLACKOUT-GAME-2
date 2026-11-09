@@ -9,3 +9,4 @@ p3_results.csv
 
 # timing runs are evidence for the T12 table - commit them deliberately, not by accident
 # frame_times_*.csv
+/CppProperties.json
