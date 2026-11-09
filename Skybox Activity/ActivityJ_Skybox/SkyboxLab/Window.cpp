@@ -4,7 +4,7 @@ Window::Window()
 {
 	width = 800;
 	height = 600;
-	title = "OBSOLETE";
+	title = "BLACKOUT";
 	mainWindow = nullptr;
 	bufferWidth = 800; bufferHeight = 600;
 	lastX = 0.0f; lastY = 0.0f;

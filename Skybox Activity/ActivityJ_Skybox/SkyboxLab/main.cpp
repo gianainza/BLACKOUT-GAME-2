@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-//  OBSOLETE - industrial cyberpunk stealth, built on the Activity J (skybox) project.        owner: R1
+// BLACKOUT- industrial cyberpunk stealth, built on the Activity J (skybox) project.        owner: R1
 //
 //  The frame, in order (S1 of the report):
 //    1. DirectionalShadowMapPass     directional_shadow_map.*   -> 2048^2 depth texture (cached: nothing moves)
@@ -1100,7 +1100,7 @@ static void DrawHud(const Scene& sc, const Game& g, float frameMs, bool vsync)
     if (g.state == GameState::Title)
     {
         hud.Rect(0, 0, (float)W, (float)H, glm::vec4(0, 0, 0, 0.62f));
-        centre("OBSOLETE", H * 0.68f, big * 2, white);
+        centre("BLACKOUT", H * 0.68f, big * 2, white);
         centre("YOU ARE SCHEDULED FOR THE INCINERATOR", H * 0.59f, ts * 2, glm::vec4(1.0f, 0.55f, 0.2f, 1));
         centre("REACH THE GREEN HATCH", H * 0.48f, ts * 2, glm::vec4(0.4f, 1, 0.5f, 1));
         centre("YELLOW SCANNER BEAMS FILL DETECTION  HIDE BEHIND SCRAP", H * 0.42f, ts * 2, white);
@@ -1153,7 +1153,7 @@ static void ResetCamera()
 int main(int argc, char** argv)
 {
 	// ---- 1. the level (CPU only; nothing here needs OpenGL, so a bad file never leaves a half-built window) ----
-	// usage:  OBSOLETE.exe [level.json] [--seed N]     (--seed makes the code puzzle deterministic)
+	// usage:  BLACKOUT.exe [level.json] [--seed N]     (--seed makes the code puzzle deterministic)
 	std::string levelPath = "level01.json";
 	bool seedGiven = false; unsigned long seedValue = 0;
 	for (int i = 1; i < argc; ++i)
@@ -1197,7 +1197,7 @@ int main(int argc, char** argv)
 	game.Init(scene);
 	ResetCamera();
 
-	std::printf("\nOBSOLETE   %s\n", glGetString(GL_VERSION) ? (const char*)glGetString(GL_VERSION) : "?");
+	std::printf("\nBLACKOUT   %s\n", glGetString(GL_VERSION) ? (const char*)glGetString(GL_VERSION) : "?");
 	std::printf("keys: WASD move | mouse look | hold E hack | F lamp | Enter start | R restart | P pause\n"
 		"      1 GPU shadows off | 2 CPU ignores walls | 3 huge bias | 0 fix | [ ] bias | V game-view overlay\n"
 		"      C shadow cache (E1) | Y vsync | T timing (300 frames) | L live GPU probe (E2) | G compare here | F9 P3 study\n\n");
