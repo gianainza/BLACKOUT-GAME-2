@@ -1,0 +1,217 @@
+=============================================================================
+ LAB ACTIVITY J - SKYBOXES
+ A CODE ANALYSIS
+ Computer Graphics Programming
+ University of Perpetual Help System DALTA - College of Computer Studies
+=============================================================================
+
+ This is not a coding activity. You are not asked to add a feature or change
+ a value. You are asked to READ a working program and explain how it works.
+
+ THE SOURCE HAS NO COMMENTS IN IT. That is deliberate. Everything you need
+ is in the code itself.
+
+ Build it and run it once so you know what correct looks like: the floor and
+ pyramids from Activity I, now standing under a photographed sky. Walk
+ around. Look up. Then start reading.
+
+-----------------------------------------------------------------------------
+ WHAT YOU ARE HANDING IN
+-----------------------------------------------------------------------------
+ ONE document. Plain text, Word or PDF, your choice.
+
+ Every answer must cite WHERE you found it: file, function, and the line as
+ it appears in your copy. An uncited answer scores zero even when correct.
+
+ You may run and modify the project freely while you work. You are not
+ handing the project in.
+
+-----------------------------------------------------------------------------
+ BEFORE YOU START
+-----------------------------------------------------------------------------
+ This activity assumes you have finished Activity I. Several questions ask
+ you to compare the two, and Part F cannot be answered without it.
+
+=============================================================================
+ PART A - WHERE THE SKY FITS                                         12 marks
+=============================================================================
+
+ A1. The sky is drawn by one call in one function. Name the function it is
+     called from, and state its position relative to everything else drawn in
+     that function. Quote the surrounding two or three lines. (3)
+
+ A2. The skybox uses its own shader program, not the main one. Explain where
+     that program is created and why it needs to be separate. Your answer
+     must name at least two things the main shader does that the sky shader
+     has no use for. (4)
+
+ A3. skybox.vert computes a value it passes to the fragment shader. Say what
+     that value is and what makes it unusual compared with every other vertex
+     shader you have seen in this course. (3)
+
+ A4. skybox.frag has no lighting, no normal and no shadow lookup. Explain why
+     none of them would make sense for this object. (2)
+
+=============================================================================
+ PART B - THE CUBE MAP, AGAIN                                        16 marks
+=============================================================================
+
+ B1. The Skybox constructor builds a cube map. Compare it, call by call, with
+     OmniShadowMap::Init from Activity I. Produce a two-column table of the
+     differences. There are at least four. (6)
+
+ B2. One of those differences is the filtering mode. Explain why each project
+     chooses the mode it does. Your answer must say what is being stored in
+     each case. (4)
+
+ B3. The upload loop asks the image loader for a number of channels, and the
+     upload itself names a pixel format. Find both. State whether they agree
+     for the files that ship with this project, and explain what would happen
+     if someone replaced one face with an image that had an alpha channel.
+     You do not have to try it. (4)
+
+ B4. If a face file is missing, the constructor prints a message and returns
+     early. Describe the state the object is left in and what the program
+     does afterwards. Say whether this is handled well. (2)
+
+=============================================================================
+ PART C - THE THREE MECHANISMS                                       24 marks
+=============================================================================
+
+ Skybox::DrawSkybox is short. Three things in it, plus one thing about where
+ it is called from, are what make a small cube look like a distant sky.
+
+ C1. Identify all three, and for each one write a single sentence saying what
+     it does. (6)
+
+ C2. One of them converts a matrix to a smaller matrix and immediately back
+     again, which looks like it achieves nothing. Write out the structure of
+     a 4x4 view matrix, say which part of it holds the rotation and which
+     part holds the translation, and from that explain exactly what survives
+     the round trip and what is destroyed. (6)
+
+ C3. PREDICT, in writing, what you would see if the line from C2 were removed
+     and you then walked forward continuously. Be specific. Then explain why
+     TURNING the camera would be unaffected by the same removal. (5)
+
+ C4. Test C3. Report whether you were right and correct yourself if not. (3)
+
+ C5. The depth mask is switched off before the draw and on again after.
+     Explain what would happen to the floor and the pyramids if both lines
+     were removed. Your answer must involve the SIZE of the sky cube. (4)
+
+=============================================================================
+ PART D - THE CUBE ITSELF                                            16 marks
+=============================================================================
+
+ D1. The cube is eight corners written out as literal numbers. Each line
+     holds more numbers than a 3D position needs. Say how many there are per
+     corner, what each group is for, and why the extra ones are all zero in
+     this particular object. (4)
+
+ D2. The mesh is created with two integer arguments after the two arrays.
+     Work out what each number counts and show the arithmetic that produces
+     it from the data above. (4)
+
+ D3. The index list draws twelve triangles. Pick any one face of the cube,
+     identify the two triangles that cover it, and state which way they are
+     wound when seen from INSIDE the cube. (4)
+
+ D4. Face culling is never enabled anywhere in this project. Say what that
+     means for your answer to D3, and say what would have to be true about
+     the winding if culling were switched on. (4)
+
+=============================================================================
+ PART E - HOW SMALL, HOW BIG                                         20 marks
+=============================================================================
+
+ Arithmetic and reasoning. The camera sits at the exact centre of the sky
+ cube - establish that from your Part C answer before you go on.
+
+ E1. Find the camera's projection and state its field of view, near plane and
+     far plane. Note that the bulbs have a near plane too, and it is a
+     different number - say which one is which and why they are unrelated. (4)
+
+ E2. For a cube of half-size s centred on the eye, write down two distances:
+     from the eye to the centre of a face, and from the eye to a corner.
+     Derive the second one. (4)
+
+ E3. Using E1 and E2, derive the SMALLEST half-size at which the sky is still
+     visible. State which part of the cube crosses which plane first, and
+     give the number. (4)
+
+ E4. Derive the LARGEST half-size at which the WHOLE sky is still visible.
+     State which part fails first and give the number. (4)
+
+ E5. The cube ships at half-size 1. Explain why any value between your two
+     limits produces an identical picture. Your answer must explain why no
+     visual cue can reveal the difference, and should mention both the matrix
+     from Part C and the depth mask. (4)
+
+=============================================================================
+ PART F - TEXTURE UNIT ZERO, REVISITED                               12 marks
+=============================================================================
+
+ In Activity I you found a texture unit that was deliberately left empty. In
+ this project the sky is bound to that same unit and the sampler that reads
+ it is never assigned a unit at all.
+
+ F1. Find the line that binds the sky, and quote it. (2)
+
+ F2. Find where, or confirm that nowhere, the skybox shader's sampler is
+     given a unit number. State what unit it therefore uses. (3)
+
+ F3. Explain why relying on that default is safe here when the same default
+     was a fault in Activity I. Your answer must say what else is bound to
+     that unit in each of the two cases. (5)
+
+ F4. Quote the line in main.cpp that keeps the unit free for the main shader.
+     (2)
+
+=============================================================================
+ PART G - ONE JUDGEMENT                                              10 marks
+=============================================================================
+
+ G1. The Skybox class allocates two objects on the heap. Find them. Then look
+     at the destructor. State what happens to those allocations when a Skybox
+     is destroyed. (4)
+
+ G2. A Skybox is default-constructed as a global and later assigned from a
+     temporary. Trace what happens to the two pointers during that
+     assignment. Say whether the program works, and whether it is correct.
+     Those are two different questions. (6)
+
+=============================================================================
+ WHAT GOOD WORK LOOKS LIKE
+=============================================================================
+ The marks are for showing that you found something in the code and
+ understood why it is written that way.
+
+ A strong answer:
+   - cites file and function every time
+   - quotes only the line that matters
+   - explains a mechanism, not a label
+   - reports a wrong prediction honestly and says what was misunderstood
+
+ A weak answer:
+   - renames the code in prose ("glDepthMask turns off the depth mask")
+   - cites nothing
+   - answers Part E by measuring instead of deriving
+
+ Parts C3 and E are where you commit to an answer before checking it. Those
+ are marked on the reasoning. A wrong prediction, honestly corrected, is
+ worth more than a right one with no working.
+
+=============================================================================
+ MARKS
+=============================================================================
+   Part A   where the sky fits        12
+   Part B   the cube map, again       16
+   Part C   the three mechanisms      24
+   Part D   the cube itself           16
+   Part E   how small, how big        20
+   Part F   texture unit zero         12
+   Part G   one judgement             10
+                                     ---
+                                     110  scaled to 100
+=============================================================================

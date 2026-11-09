@@ -1,0 +1,8 @@
+{
+  "dependencies": [
+    "glew",
+    "glfw3",
+    "glm"
+  ],
+  "builtin-baseline": "ec48c11eae9448c8c6e7739d93e06fa2433aa95f"
+}
