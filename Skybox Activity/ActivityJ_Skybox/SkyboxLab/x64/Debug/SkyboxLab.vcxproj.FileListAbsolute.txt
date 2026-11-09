@@ -1,3 +1,0 @@
-C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\x64\Debug\glew32d.dll
-C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\x64\Debug\glfw3.dll
-C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\x64\Debug\SkyboxLab.vcxproj.Up2Date
