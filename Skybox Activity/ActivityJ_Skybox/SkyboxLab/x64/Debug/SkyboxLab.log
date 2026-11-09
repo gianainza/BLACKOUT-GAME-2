@@ -1,0 +1,170 @@
+﻿  Installing vcpkg dependencies to C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\vcpkg_installed\x64-windows\
+  "E:\Computer Graphics\VS\VC\vcpkg\vcpkg.exe" install  --x-wait-for-lock --triplet "x64-windows" --vcpkg-root "E:\Computer Graphics\VS\VC\vcpkg\\" "--x-manifest-root=C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\\" "--x-install-root=C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\vcpkg_installed\x64-windows\\" 
+  Detecting compiler hash for triplet x64-windows...
+  Compiler found: E:/Computer Graphics/VS/VC/Tools/MSVC/14.52.36815/bin/Hostx64/x64/cl.exe
+  The following packages are already installed:
+    * egl-registry:x64-windows@2025-05-27
+      glew:x64-windows@2.3.1
+      glfw3:x64-windows@3.5.1
+      glm:x64-windows@1.0.3
+    * opengl:x64-windows@2022-12-04#3
+    * opengl-registry:x64-windows@2026-08-03
+    * vcpkg-cmake:x64-windows@2025-08-07
+    * vcpkg-cmake-config:x64-windows@2026-07-21
+  glew provides CMake targets:
+  
+    # Legacy CMake find module
+    find_package(GLEW REQUIRED)
+    target_link_libraries(main PRIVATE GLEW::GLEW)
+  
+    # Modern CMake config package
+    find_package(GLEW CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE GLEW::GLEW)
+  
+  glew provides pkg-config modules:
+  
+    # The OpenGL Extension Wrangler library
+    glew
+  
+  glfw3 provides CMake targets:
+  
+    # this is heuristically generated, and may not be correct
+    find_package(glfw3 CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE glfw)
+  
+  glfw3 provides pkg-config modules:
+  
+    # A multi-platform library for OpenGL, window and input
+    glfw3
+  
+  The package glm provides CMake targets:
+  
+      find_package(glm CONFIG REQUIRED)
+      target_link_libraries(main PRIVATE glm::glm)
+  
+      # Or use the header-only version
+      find_package(glm CONFIG REQUIRED)
+      target_link_libraries(main PRIVATE glm::glm-header-only)
+  
+  All requested installations completed successfully in: 355 us
+  main.cpp
+  Camera.cpp
+  DirectionalLight.cpp
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\DirectionalLight.cpp(24,14): warning C4244: 'argument': conversion from 'GLfloat' to 'GLint', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\DirectionalLight.cpp(25,14): warning C4244: 'argument': conversion from 'GLfloat' to 'GLint', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\DirectionalLight.cpp(27,14): warning C4244: 'argument': conversion from 'GLfloat' to 'GLint', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\DirectionalLight.cpp(28,14): warning C4244: 'argument': conversion from 'GLfloat' to 'GLint', possible loss of data
+  Game.cpp
+  Hud.cpp
+  Json.cpp
+  LitTest.cpp
+  Model.cpp
+  OmniShadowMap.cpp
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\OmniShadowMap.cpp(16,47): warning C4267: 'argument': conversion from 'size_t' to 'GLenum', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\OmniShadowMap.cpp(35,10): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'GLenum'
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\OmniShadowMap.cpp(35,10): warning C4313: 'printf': '%s' in format string conflicts with argument 1 of type 'GLenum'
+  PointLight.cpp
+  Scene.cpp
+  SceneLoader.cpp
+  Shader.cpp
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(142,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(142,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(145,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(145,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(148,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(148,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(151,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(151,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(154,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(154,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(157,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(157,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(160,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(160,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(170,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(170,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(173,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(173,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(176,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(176,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(179,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(179,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(182,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(182,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(185,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(185,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(188,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(188,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(191,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(191,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(194,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(194,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(209,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(209,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(217,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(217,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(220,38): warning C4477: 'snprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'size_t'
+      C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(220,38):
+      consider using '%zu' in the format string
+  
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(277,75): warning C4244: 'argument': conversion from 'GLuint' to 'GLfloat', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(277,26): warning C4244: 'argument': conversion from 'GLuint' to 'GLfloat', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(276,91): warning C4244: 'argument': conversion from 'GLuint' to 'GLfloat', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(276,42): warning C4244: 'argument': conversion from 'GLuint' to 'GLfloat', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(292,60): warning C4267: 'argument': conversion from 'size_t' to 'GLenum', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(293,71): warning C4267: 'argument': conversion from 'size_t' to 'GLint', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(311,60): warning C4267: 'argument': conversion from 'size_t' to 'GLenum', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(312,71): warning C4267: 'argument': conversion from 'size_t' to 'GLint', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Shader.cpp(380,24): warning C4267: '=': conversion from 'size_t' to 'GLint', possible loss of data
+  ShadowMap.cpp
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\ShadowMap.cpp(35,10): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'GLenum'
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\ShadowMap.cpp(35,10): warning C4313: 'printf': '%s' in format string conflicts with argument 1 of type 'GLenum'
+  Skybox.cpp
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Skybox.cpp(30,47): warning C4267: 'argument': conversion from 'size_t' to 'GLenum', possible loss of data
+  SpotLight.cpp
+  Timing.cpp
+  Window.cpp
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Window.cpp(149,22): warning C4244: '=': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Window.cpp(150,22): warning C4244: '=': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Window.cpp(154,28): warning C4244: '=': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Window.cpp(155,40): warning C4244: '=': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Window.cpp(157,21): warning C4244: '=': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\SkyboxLab\Window.cpp(158,21): warning C4244: '=': conversion from 'double' to 'GLfloat', possible loss of data
+  Generating Code...
+  SkyboxLab.vcxproj -> C:\Users\Gianna\Downloads\FINAL-REPO\Skybox Activity\ActivityJ_Skybox\x64\Debug\OBSOLETE.exe

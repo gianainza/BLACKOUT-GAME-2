@@ -1,0 +1,2 @@
+C:/Users/Gianna/Downloads/FINAL-REPO/Skybox Activity/ActivityJ_Skybox/SkyboxLab/vcpkg_installed/vcpkg/blds/detect_compiler/x64-windows-rel/CMakeFiles/edit_cache.dir
+C:/Users/Gianna/Downloads/FINAL-REPO/Skybox Activity/ActivityJ_Skybox/SkyboxLab/vcpkg_installed/vcpkg/blds/detect_compiler/x64-windows-rel/CMakeFiles/rebuild_cache.dir
