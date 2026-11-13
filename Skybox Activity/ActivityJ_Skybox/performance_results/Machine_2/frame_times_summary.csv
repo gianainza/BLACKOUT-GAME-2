@@ -1,0 +1,3 @@
+date_time,run,scene,gpu,cache,omni_res,mean_ms,median_ms,p95_ms,min_ms,max_ms,fps_equivalent,shadow_gpu_ms_avg,maps_rebuilt_avg
+2026-11-13 19:49:08,1,play,"Intel(R) UHD Graphics",on,1024,42.4504,42.2396,48.8513,34.6565,58.0176,23.5569,6.6879,1.8633
+2026-11-13 19:49:46,2,play,"Intel(R) UHD Graphics",on,1024,38.0428,38.1294,42.7326,32.0191,47.1949,26.2862,6.0792,2.0100

@@ -1,0 +1,3 @@
+date_time,run,scene,gpu,cache,omni_res,mean_ms,median_ms,p95_ms,min_ms,max_ms,fps_equivalent,shadow_gpu_ms_avg,maps_rebuilt_avg
+2026-11-13 19:15:15,1,play,"NVIDIA GeForce GTX 1050 Ti/PCIe/SSE2",on,1024,63.2468,60.9633,87.8470,21.8723,156.2856,15.8111,2.1321,2.6433
+2026-11-13 19:18:50,1,play,"NVIDIA GeForce GTX 1050 Ti/PCIe/SSE2",on,1024,57.7155,56.3278,79.1295,7.7692,159.3126,17.3264,2.2974,2.5400
