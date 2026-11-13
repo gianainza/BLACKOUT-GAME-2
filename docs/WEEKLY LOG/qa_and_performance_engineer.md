@@ -10,8 +10,8 @@
 
 ## WEEK 1 – PROJECT FAMILIARIZATION AND QA PLANNING
 
-**Dates:** [Insert actual date]  
-**Hours this week:** [Insert actual hours]
+**Dates:** Oct 28 – Oct 30  
+**Hours this week:** 3
 
 ### WHAT I DID
 * Reviewed the existing BLACKOUT project structure and available project documentation to understand the application's functionality and testing requirements.
@@ -44,8 +44,8 @@
 
 ## WEEK 2 – BUILD VERIFICATION AND TEST ENVIRONMENT SETUP
 
-**Dates:** [Insert actual date]  
-**Hours this week:** [Insert actual hours]
+**Dates:** Oct 31 - Nov 3 
+**Hours this week:** 4
 
 ### WHAT I DID
 * Built and launched the BLACKOUT application through Visual Studio Community to verify that the project could run on my machine.
@@ -82,8 +82,8 @@
 
 ## WEEK 3 – STATE MACHINE AND GAMEPLAY TESTING
 
-**Dates:** [Insert actual date]  
-**Hours this week:** [Insert actual hours]
+**Dates:** Nov 4 - Nov 6  
+**Hours this week:** 3
 
 ### WHAT I DID
 * Executed the state-machine test cases to verify the application's primary gameplay transitions.
@@ -130,8 +130,8 @@
 
 ## WEEK 4 – LIGHTING TESTING AND BUG DOCUMENTATION
 
-**Dates:** [Insert actual date]  
-**Hours this week:** [Insert actual hours]
+**Dates:** Nov 7 - Nov 9  
+**Hours this week:** 3
 
 ### WHAT I DID
 * Conducted lighting and detection tests to evaluate how enemy scanners detect the player.
@@ -179,8 +179,8 @@
 
 ## WEEK 5 – PERFORMANCE BENCHMARKING AND REPORTING
 
-**Dates:** [Insert actual date]  
-**Hours this week:** [Insert actual hours]
+**Dates:** Nov 10 - Nov 11  
+**Hours this week:** 3
 
 ### WHAT I DID
 * Inspected the existing `FrameTimeLogger` implementation to understand its warm-up period, measurement process, and CSV output.
